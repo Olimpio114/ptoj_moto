@@ -1,0 +1,10 @@
+RELATÓRIO DE MANUTENÇÃO
+=========================
+
+--- óleo ---
+Valor: R$ 25.00
+Data da troca: 25/09/2025
+KM da troca: 32000 km
+Próxima troca recomendada: 34000 km ou 24/03/2026
+
+-------------------------

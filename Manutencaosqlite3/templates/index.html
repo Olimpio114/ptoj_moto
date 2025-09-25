@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Manutenção</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 sm:p-8 lg:p-10">
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Gerenciador de Manutenção</h1>
+            <p class="mt-2 text-gray-500">Controle as manutenções do seu veículo de forma simples.</p>
+        </div>
+
+        <div id="form-container" class="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Adicionar Novo Item</h2>
+            <form id="form-manutencao" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="relative">
+                    <label for="nome" class="text-sm font-medium text-gray-700">Nome do Item</label>
+                    <input type="text" id="nome" name="nome" placeholder="Ex: Óleo, Filtro" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+
+                <div class="relative">
+                    <label for="valor" class="text-sm font-medium text-gray-700">Valor (R$)</label>
+                    <input type="number" id="valor" name="valor" placeholder="Ex: 50.00" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+                
+                <div class="relative">
+                    <label for="data_troca" class="text-sm font-medium text-gray-700">Data da Troca</label>
+                    <input type="date" id="data_troca" name="data_troca" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+
+                <div class="relative">
+                    <label for="km_troca" class="text-sm font-medium text-gray-700">KM da Troca</label>
+                    <input type="number" id="km_troca" name="km_troca" placeholder="Ex: 10000" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+
+                <div class="relative">
+                    <label for="km_proxima" class="text-sm font-medium text-gray-700">KM para a Próxima Troca</label>
+                    <input type="number" id="km_proxima" name="km_proxima" placeholder="Ex: 5000" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+
+                <div class="relative">
+                    <label for="meses_proxima" class="text-sm font-medium text-gray-700">Meses para a Próxima Troca</label>
+                    <input type="number" id="meses_proxima" name="meses_proxima" placeholder="Ex: 6" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                </div>
+
+                <div class="lg:col-span-3 mt-4 text-center">
+                    <button type="submit" class="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                        Adicionar Item
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="relatorios-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Itens de Manutenção</h2>
+            <div id="lista-manutencao" class="space-y-4">
+                </div>
+            <div class="mt-6 text-center">
+                <button id="btn-gerar-relatorio" class="px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                    Gerar Relatório (TXT)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndRenderItens();
+        });
+
+        async function fetchAndRenderItens() {
+            try {
+                const response = await fetch('/api/itens');
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar itens do servidor.');
+                }
+                const itens = await response.json();
+                renderItens(itens);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('lista-manutencao').innerHTML = `
+                    <p class="text-red-500">Erro ao carregar dados. Por favor, tente novamente.</p>
+                `;
+            }
+        }
+        
+        function renderItens(itens) {
+            const listaManutencao = document.getElementById('lista-manutencao');
+            listaManutencao.innerHTML = '';
+            
+            if (itens.length === 0) {
+                listaManutencao.innerHTML = `<p class="text-gray-500 text-center">Nenhum item de manutenção registrado.</p>`;
+            } else {
+                itens.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = "bg-white rounded-lg shadow-sm p-4 border border-gray-200 flex justify-between items-center";
+                    itemDiv.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${item.nome}</p>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Data da troca: ${item.data_troca} | KM da troca: ${item.km_troca} km
+                            </p>
+                            <p class="text-sm text-red-500 font-bold mt-1">
+                                Próxima Troca: KM ${item.proxima_troca_km_prevista} ou Data ${item.proxima_data_formatada}
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="removeItem(${item.id})" class="text-red-500 hover:text-red-700 font-bold py-1 px-2 rounded transition-colors">
+                                Remover
+                            </button>
+                        </div>
+                    `;
+                    listaManutencao.appendChild(itemDiv);
+                });
+            }
+        }
+
+        async function removeItem(itemId) {
+            try {
+                const response = await fetch(`/api/itens/${itemId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.mensagem);
+                    fetchAndRenderItens(); // Recarrega a lista
+                } else {
+                    alert(result.mensagem);
+                }
+            } catch (error) {
+                console.error("Erro ao remover item:", error);
+                alert("Erro ao remover item. Tente novamente.");
+            }
+        }
+
+        document.getElementById('form-manutencao').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const data = {
+                nome: form.nome.value,
+                valor: form.valor.value,
+                data_troca: form.data_troca.value,
+                km_troca: form.km_troca.value,
+                km_proxima: form.km_proxima.value,
+                meses_proxima: form.meses_proxima.value
+            };
+            
+            try {
+                const response = await fetch('/api/itens', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.mensagem);
+                    form.reset();
+                    fetchAndRenderItens();
+                } else {
+                    alert(result.mensagem);
+                }
+            } catch (error) {
+                console.error("Erro ao adicionar item:", error);
+                alert("Erro ao adicionar item. Tente novamente.");
+            }
+        });
+
+        document.getElementById('btn-gerar-relatorio').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/relatorio', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.mensagem);
+                } else {
+                    alert(result.mensagem);
+                }
+            } catch (error) {
+                console.error("Erro ao gerar relatório:", error);
+                alert("Erro ao gerar relatório. Verifique o console.");
+            }
+        });
+
+    </script>
+</body>
+</html>
